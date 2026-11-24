@@ -1,0 +1,233 @@
+{
+  "entities": {
+    "PlayerProfile": {
+      "title": "PlayerProfile",
+      "description": "Persistent player character, world coordinates, economy, loadout, and offline AI proxy state.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the owner." },
+        "playerCode": { "type": "string", "description": "Public 9-digit UID code for search/inspection." },
+        "username": { "type": "string" },
+        "guild": { "type": "string" },
+        "level": { "type": "integer" },
+        "xp": { "type": "integer" },
+        "rankTitle": { "type": "string" },
+        "coins": { "type": "integer" },
+        "diamonds": { "type": "integer" },
+        "upgradePoints": { "type": "integer" },
+        "kills": { "type": "integer" },
+        "deaths": { "type": "integer" },
+        "worldDistrict": { "type": "string" },
+        "posX": { "type": "number" },
+        "posY": { "type": "number" },
+        "posZ": { "type": "number" },
+        "rotY": { "type": "number" },
+        "hp": { "type": "number" },
+        "ep": { "type": "number" },
+        "shield": { "type": "number" },
+        "onlineStatus": { "type": "boolean" },
+        "aiProxyActive": { "type": "boolean" },
+        "aiProxyLastAction": { "type": "string" },
+        "discoverable": { "type": "boolean" },
+        "activeVehicleId": { "type": "string" },
+        "activePetId": { "type": "string" },
+        "activeWeaponId": { "type": "string" },
+        "hairStyle": { "type": "string" },
+        "outfitStyle": { "type": "string" },
+        "accessoryStyle": { "type": "string" },
+        "accentColorHex": { "type": "string" },
+        "equippedAbilities": { "type": "array" },
+        "unlockedWeapons": { "type": "array" },
+        "unlockedVehicles": { "type": "array" },
+        "unlockedProperties": { "type": "array" },
+        "latitude": { "type": "number", "description": "Latest device GPS latitude." },
+        "longitude": { "type": "number", "description": "Latest device GPS longitude." },
+        "locationAccuracyMeters": { "type": "number", "description": "Horizontal accuracy of GPS coordinate in meters." },
+        "locationTrackingEnabled": { "type": "boolean", "description": "Whether player enabled live GPS location tracking." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "playerCode", "username", "guild", "level", "xp", "rankTitle", "coins", "diamonds", "upgradePoints", "kills", "deaths", "worldDistrict", "posX", "posY", "posZ", "rotY", "hp", "ep", "shield", "onlineStatus", "aiProxyActive", "aiProxyLastAction", "discoverable", "activeVehicleId", "activePetId", "activeWeaponId", "hairStyle", "outfitStyle", "accessoryStyle", "accentColorHex", "equippedAbilities", "unlockedWeapons", "unlockedVehicles", "unlockedProperties", "createdAt", "updatedAt"]
+    },
+    "OwnedPet": {
+      "title": "OwnedPet",
+      "description": "Player-owned fantasy/cyber companion pet with level, XP, rarity, skin, and ability.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "petType": { "type": "string" },
+        "nickname": { "type": "string" },
+        "rarity": { "type": "string" },
+        "level": { "type": "integer" },
+        "xp": { "type": "integer" },
+        "skinId": { "type": "string" },
+        "abilityId": { "type": "string" },
+        "equipped": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "petType", "nickname", "rarity", "level", "xp", "skinId", "abilityId", "equipped", "createdAt", "updatedAt"]
+    },
+    "OwnedVehicle": {
+      "title": "OwnedVehicle",
+      "description": "Player-owned vehicle with Car Key lock state, alarm, paint, and upgrade level.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "modelId": { "type": "string" },
+        "category": { "type": "string" },
+        "paintHex": { "type": "string" },
+        "skinName": { "type": "string" },
+        "locked": { "type": "boolean" },
+        "alarmArmed": { "type": "boolean" },
+        "stolenByUid": { "type": "string" },
+        "garageSlot": { "type": "integer" },
+        "upgradeLevel": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "modelId", "category", "paintHex", "skinName", "locked", "alarmArmed", "garageSlot", "upgradeLevel", "createdAt", "updatedAt"]
+    },
+    "OwnedProperty": {
+      "title": "OwnedProperty",
+      "description": "Player-owned house, apartment, or villa with interior customization and upgrade state.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "propertyType": { "type": "string" },
+        "district": { "type": "string" },
+        "customName": { "type": "string" },
+        "upgradeLevel": { "type": "integer" },
+        "decorTheme": { "type": "string" },
+        "furnitureCount": { "type": "integer" },
+        "petAreaEnabled": { "type": "boolean" },
+        "garageCapacity": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "propertyType", "district", "customName", "upgradeLevel", "decorTheme", "furnitureCount", "petAreaEnabled", "garageCapacity", "createdAt", "updatedAt"]
+    },
+    "MissionProgress": {
+      "title": "MissionProgress",
+      "description": "Daily, weekly, story, driving, pet, multiplayer, and AI-generated mission progress.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "targetCount": { "type": "integer" },
+        "progressCount": { "type": "integer" },
+        "rewardCoins": { "type": "integer" },
+        "rewardXp": { "type": "integer" },
+        "completed": { "type": "boolean" },
+        "claimed": { "type": "boolean" },
+        "aiGenerated": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "description", "category", "targetCount", "progressCount", "rewardCoins", "rewardXp", "completed", "claimed", "aiGenerated", "createdAt", "updatedAt"]
+    },
+    "Friendship": {
+      "title": "Friendship",
+      "description": "Friend request or active friendship between two players.",
+      "type": "object",
+      "properties": {
+        "requesterUid": { "type": "string" },
+        "targetUid": { "type": "string" },
+        "requesterName": { "type": "string" },
+        "targetName": { "type": "string" },
+        "participantUids": { "type": "array" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["requesterUid", "targetUid", "requesterName", "targetName", "participantUids", "status", "createdAt", "updatedAt"]
+    },
+    "BountyContract": {
+      "title": "BountyContract",
+      "description": "PvP Eliminate My Friend bounty mission with anti-farm cooldowns and terminal resolution.",
+      "type": "object",
+      "properties": {
+        "hunterUid": { "type": "string" },
+        "hunterName": { "type": "string" },
+        "targetUid": { "type": "string" },
+        "targetName": { "type": "string" },
+        "participantUids": { "type": "array" },
+        "rewardHunter": { "type": "integer" },
+        "rewardCounter": { "type": "integer" },
+        "status": { "type": "string", "enum": ["active", "hunter_won", "target_won", "expired"] },
+        "winnerUid": { "type": "string" },
+        "cooldownUntilEpochMs": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["hunterUid", "hunterName", "targetUid", "targetName", "participantUids", "rewardHunter", "rewardCounter", "status", "cooldownUntilEpochMs", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Multiplayer world/session chat message.",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string" },
+        "senderUid": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "messageType": { "type": "string", "enum": ["text", "emote", "alert"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["roomId", "senderUid", "senderName", "text", "messageType", "createdAt"]
+    },
+    "PlayerHudSettings": {
+      "title": "PlayerHudSettings",
+      "description": "Serialized 5-slot HUD layout presets and 16 gameplay control/sensitivity/audio settings.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "activeLayoutIndex": { "type": "integer" },
+        "payloadJson": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "activeLayoutIndex", "payloadJson", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/players/{userId}": {
+      "schema": { "$ref": "#/entities/PlayerProfile" },
+      "description": "Public & persistent player profile, coordinates, economy, and AI proxy state."
+    },
+    "/users/{userId}/pets/{petId}": {
+      "schema": { "$ref": "#/entities/OwnedPet" },
+      "description": "User-owned companion pets."
+    },
+    "/users/{userId}/vehicles/{vehicleId}": {
+      "schema": { "$ref": "#/entities/OwnedVehicle" },
+      "description": "User-owned vehicles and Car Key lock/alarm records."
+    },
+    "/users/{userId}/properties/{propertyId}": {
+      "schema": { "$ref": "#/entities/OwnedProperty" },
+      "description": "User-owned houses, apartments, and villas."
+    },
+    "/users/{userId}/missions/{missionId}": {
+      "schema": { "$ref": "#/entities/MissionProgress" },
+      "description": "User mission tracking including AI-generated missions."
+    },
+    "/users/{userId}/hud_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/PlayerHudSettings" },
+      "description": "User custom HUD layouts and gameplay control preferences."
+    },
+    "/friendships/{friendshipId}": {
+      "schema": { "$ref": "#/entities/Friendship" },
+      "description": "Friendships and friend requests scoped to participantUids."
+    },
+    "/bounties/{bountyId}": {
+      "schema": { "$ref": "#/entities/BountyContract" },
+      "description": "PvP bounty missions between players."
+    },
+    "/chat_messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Multiplayer session chat messages."
+    }
+  }
+}

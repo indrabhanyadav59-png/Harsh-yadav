@@ -1,0 +1,454 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBoundedString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidStringList(val, maxSize) {
+      return val is list && val.size() <= maxSize && (val.size() == 0 || val[0] is string);
+    }
+
+    // --- 1. Player Profile & Persistent AI Proxy State ---
+    function isValidPlayerProfile(data) {
+      return isBoundedString(data.userId, 1, 128) &&
+             isBoundedString(data.playerCode, 3, 24) &&
+             isBoundedString(data.username, 2, 30) &&
+             isBoundedString(data.guild, 1, 24) &&
+             data.level is int && data.level >= 1 && data.level <= 999 &&
+             data.xp is int && data.xp >= 0 &&
+             isBoundedString(data.rankTitle, 1, 40) &&
+             data.coins is int && data.coins >= 0 &&
+             data.diamonds is int && data.diamonds >= 0 &&
+             data.upgradePoints is int && data.upgradePoints >= 0 &&
+             data.kills is int && data.kills >= 0 &&
+             data.deaths is int && data.deaths >= 0 &&
+             isBoundedString(data.worldDistrict, 1, 50) &&
+             data.posX is number && data.posX >= -1200 && data.posX <= 1200 &&
+             data.posY is number && data.posY >= -100 && data.posY <= 500 &&
+             data.posZ is number && data.posZ >= -1200 && data.posZ <= 1200 &&
+             data.rotY is number &&
+             data.hp is number && data.hp >= 0 && data.hp <= 1000 &&
+             data.ep is number && data.ep >= 0 && data.ep <= 1000 &&
+             data.shield is number && data.shield >= 0 && data.shield <= 1000 &&
+             data.onlineStatus is bool &&
+             data.aiProxyActive is bool &&
+             isBoundedString(data.aiProxyLastAction, 0, 140) &&
+             data.discoverable is bool &&
+             isBoundedString(data.activeVehicleId, 0, 64) &&
+             isBoundedString(data.activePetId, 0, 64) &&
+             isBoundedString(data.activeWeaponId, 1, 64) &&
+             isBoundedString(data.hairStyle, 1, 40) &&
+             isBoundedString(data.outfitStyle, 1, 40) &&
+             (!('accessoryStyle' in data) || isBoundedString(data.accessoryStyle, 1, 40)) &&
+             isBoundedString(data.accentColorHex, 4, 16) &&
+             isValidStringList(data.equippedAbilities, 8) &&
+             isValidStringList(data.unlockedWeapons, 16) &&
+             isValidStringList(data.unlockedVehicles, 16) &&
+             isValidStringList(data.unlockedProperties, 16) &&
+             (!('unlockedCharSlots' in data) || (data.unlockedCharSlots is int && data.unlockedCharSlots >= 2 && data.unlockedCharSlots <= 3)) &&
+             (!('unlockedPetSlots' in data) || (data.unlockedPetSlots is int && data.unlockedPetSlots >= 2 && data.unlockedPetSlots <= 4)) &&
+             (!('latitude' in data) || (data.latitude is number && data.latitude >= -90 && data.latitude <= 90)) &&
+             (!('longitude' in data) || (data.longitude is number && data.longitude >= -180 && data.longitude <= 180)) &&
+             (!('locationAccuracyMeters' in data) || (data.locationAccuracyMeters is number && data.locationAccuracyMeters >= 0 && data.locationAccuracyMeters <= 50000)) &&
+             (!('locationTrackingEnabled' in data) || data.locationTrackingEnabled is bool) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /players/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.discoverable == true
+      );
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'playerCode', 'username', 'guild', 'level', 'xp', 'rankTitle',
+                         'coins', 'diamonds', 'upgradePoints', 'kills', 'deaths', 'worldDistrict',
+                         'posX', 'posY', 'posZ', 'rotY', 'hp', 'ep', 'shield', 'onlineStatus',
+                         'aiProxyActive', 'aiProxyLastAction', 'discoverable', 'activeVehicleId',
+                         'activePetId', 'activeWeaponId', 'hairStyle', 'outfitStyle', 'accentColorHex',
+                         'equippedAbilities', 'unlockedWeapons', 'unlockedVehicles',
+                         'unlockedProperties', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'playerCode', 'username', 'guild', 'level', 'xp', 'rankTitle',
+                         'coins', 'diamonds', 'upgradePoints', 'kills', 'deaths', 'worldDistrict',
+                         'posX', 'posY', 'posZ', 'rotY', 'hp', 'ep', 'shield', 'onlineStatus',
+                         'aiProxyActive', 'aiProxyLastAction', 'discoverable', 'activeVehicleId',
+                         'activePetId', 'activeWeaponId', 'hairStyle', 'outfitStyle', 'accessoryStyle',
+                         'accentColorHex', 'equippedAbilities', 'unlockedWeapons', 'unlockedVehicles',
+                         'unlockedProperties', 'unlockedCharSlots', 'unlockedPetSlots',
+                         'latitude', 'longitude', 'locationAccuracyMeters', 'locationTrackingEnabled',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPlayerProfile(incoming());
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidPlayerProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().playerCode == existing().playerCode &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'username', 'guild', 'level', 'xp', 'rankTitle', 'coins', 'diamonds',
+                         'upgradePoints', 'kills', 'deaths', 'worldDistrict', 'posX', 'posY',
+                         'posZ', 'rotY', 'hp', 'ep', 'shield', 'onlineStatus', 'aiProxyActive',
+                         'aiProxyLastAction', 'discoverable', 'activeVehicleId', 'activePetId',
+                         'activeWeaponId', 'hairStyle', 'outfitStyle', 'accessoryStyle',
+                         'accentColorHex', 'equippedAbilities', 'unlockedWeapons', 'unlockedVehicles',
+                         'unlockedProperties', 'unlockedCharSlots', 'unlockedPetSlots',
+                         'latitude', 'longitude', 'locationAccuracyMeters', 'locationTrackingEnabled',
+                         'updatedAt'
+                       ]);
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+
+    // --- 2. User Pets Subcollection ---
+    function isValidPet(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.petType, 1, 40) &&
+             isBoundedString(data.nickname, 1, 30) &&
+             isBoundedString(data.rarity, 1, 20) &&
+             data.level is int && data.level >= 1 && data.level <= 100 &&
+             data.xp is int && data.xp >= 0 &&
+             isBoundedString(data.skinId, 1, 40) &&
+             isBoundedString(data.abilityId, 1, 40) &&
+             data.equipped is bool &&
+             (!('evolutionLevel' in data) || (data.evolutionLevel is int && data.evolutionLevel >= 1 && data.evolutionLevel <= 3)) &&
+             (!('customTintHex' in data) || isBoundedString(data.customTintHex, 0, 16)) &&
+             (!('auraStyle' in data) || isBoundedString(data.auraStyle, 1, 24)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/pets/{petId} {
+      allow get: if isOwner(userId) && isValidId(petId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       isValidId(petId) &&
+                       incoming().keys().hasAll(['userId', 'petType', 'nickname', 'rarity', 'level', 'xp', 'skinId', 'abilityId', 'equipped', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'petType', 'nickname', 'rarity', 'level', 'xp', 'skinId', 'abilityId', 'equipped', 'evolutionLevel', 'customTintHex', 'auraStyle', 'createdAt', 'updatedAt']) &&
+                       isValidPet(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(petId) &&
+                       isValidPet(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['nickname', 'level', 'xp', 'skinId', 'abilityId', 'equipped', 'evolutionLevel', 'customTintHex', 'auraStyle', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(petId);
+    }
+
+    // --- 3. User Vehicles & Car Key System ---
+    function isValidVehicle(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.modelId, 1, 50) &&
+             data.category in ['supercar', 'motorcycle', 'suv', 'buggy', 'police', 'helicopter'] &&
+             isBoundedString(data.paintHex, 4, 16) &&
+             isBoundedString(data.skinName, 1, 40) &&
+             data.locked is bool &&
+             data.alarmArmed is bool &&
+             (!('stolenByUid' in data) || data.stolenByUid == null || isBoundedString(data.stolenByUid, 1, 128)) &&
+             data.garageSlot is int && data.garageSlot >= 0 && data.garageSlot <= 50 &&
+             data.upgradeLevel is int && data.upgradeLevel >= 1 && data.upgradeLevel <= 20 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/vehicles/{vehicleId} {
+      allow get: if isOwner(userId) && isValidId(vehicleId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       isValidId(vehicleId) &&
+                       incoming().keys().hasAll(['userId', 'modelId', 'category', 'paintHex', 'skinName', 'locked', 'alarmArmed', 'garageSlot', 'upgradeLevel', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'modelId', 'category', 'paintHex', 'skinName', 'locked', 'alarmArmed', 'stolenByUid', 'garageSlot', 'upgradeLevel', 'createdAt', 'updatedAt']) &&
+                       isValidVehicle(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(vehicleId) &&
+                       isValidVehicle(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['paintHex', 'skinName', 'locked', 'alarmArmed', 'stolenByUid', 'garageSlot', 'upgradeLevel', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(vehicleId);
+    }
+
+    // --- 4. User Houses & Properties ---
+    function isValidProperty(data, userId) {
+      return data.userId == userId &&
+             data.propertyType in ['small_house', 'apartment', 'luxury_house', 'villa', 'penthouse'] &&
+             isBoundedString(data.district, 1, 50) &&
+             isBoundedString(data.customName, 1, 50) &&
+             data.upgradeLevel is int && data.upgradeLevel >= 1 && data.upgradeLevel <= 10 &&
+             isBoundedString(data.decorTheme, 1, 40) &&
+             data.furnitureCount is int && data.furnitureCount >= 0 && data.furnitureCount <= 200 &&
+             data.petAreaEnabled is bool &&
+             data.garageCapacity is int && data.garageCapacity >= 1 && data.garageCapacity <= 20 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/properties/{propertyId} {
+      allow get: if isOwner(userId) && isValidId(propertyId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       isValidId(propertyId) &&
+                       incoming().keys().hasAll(['userId', 'propertyType', 'district', 'customName', 'upgradeLevel', 'decorTheme', 'furnitureCount', 'petAreaEnabled', 'garageCapacity', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'propertyType', 'district', 'customName', 'upgradeLevel', 'decorTheme', 'furnitureCount', 'petAreaEnabled', 'garageCapacity', 'createdAt', 'updatedAt']) &&
+                       isValidProperty(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(propertyId) &&
+                       isValidProperty(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['customName', 'upgradeLevel', 'decorTheme', 'furnitureCount', 'petAreaEnabled', 'garageCapacity', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(propertyId);
+    }
+
+    // --- 5. User Missions (incl. AI-generated) ---
+    function isValidMission(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.title, 2, 80) &&
+             isBoundedString(data.description, 2, 240) &&
+             data.category in ['daily', 'weekly', 'story', 'driving', 'exploration', 'pet', 'multiplayer', 'ai', 'event'] &&
+             data.targetCount is int && data.targetCount >= 1 && data.targetCount <= 1000 &&
+             data.progressCount is int && data.progressCount >= 0 && data.progressCount <= data.targetCount &&
+             data.rewardCoins is int && data.rewardCoins >= 0 && data.rewardCoins <= 5000 &&
+             data.rewardXp is int && data.rewardXp >= 0 && data.rewardXp <= 5000 &&
+             data.completed is bool &&
+             data.claimed is bool &&
+             data.aiGenerated is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/missions/{missionId} {
+      allow get: if isOwner(userId) && isValidId(missionId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       isValidId(missionId) &&
+                       incoming().keys().hasAll(['userId', 'title', 'description', 'category', 'targetCount', 'progressCount', 'rewardCoins', 'rewardXp', 'completed', 'claimed', 'aiGenerated', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'title', 'description', 'category', 'targetCount', 'progressCount', 'rewardCoins', 'rewardXp', 'completed', 'claimed', 'aiGenerated', 'createdAt', 'updatedAt']) &&
+                       isValidMission(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(missionId) &&
+                       isValidMission(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['progressCount', 'completed', 'claimed', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(missionId);
+    }
+
+    // --- 5b. User HUD Layout & Gameplay Settings ---
+    function isValidHudSettings(data, userId) {
+      return data.userId == userId &&
+             data.activeLayoutIndex is int && data.activeLayoutIndex >= 0 && data.activeLayoutIndex <= 4 &&
+             isBoundedString(data.payloadJson, 2, 32000) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/hud_settings/{settingId} {
+      allow get: if isOwner(userId) && isValidId(settingId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       isValidId(settingId) &&
+                       incoming().keys().hasAll(['userId', 'activeLayoutIndex', 'payloadJson', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'activeLayoutIndex', 'payloadJson', 'createdAt', 'updatedAt']) &&
+                       isValidHudSettings(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(settingId) &&
+                       isValidHudSettings(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['activeLayoutIndex', 'payloadJson', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(settingId);
+    }
+
+    // --- 6. Friendships ---
+    function isValidFriendship(data) {
+      return isBoundedString(data.requesterUid, 1, 128) &&
+             isBoundedString(data.targetUid, 1, 128) &&
+             data.requesterUid != data.targetUid &&
+             isBoundedString(data.requesterName, 1, 30) &&
+             isBoundedString(data.targetName, 1, 30) &&
+             data.participantUids is list &&
+             data.participantUids.size() == 2 &&
+             data.requesterUid in data.participantUids &&
+             data.targetUid in data.participantUids &&
+             data.status in ['pending', 'accepted', 'declined'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /friendships/{friendshipId} {
+      allow get, list: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow create: if isSignedIn() &&
+                       isValidId(friendshipId) &&
+                       incoming().requesterUid == request.auth.uid &&
+                       incoming().status == 'pending' &&
+                       incoming().keys().hasAll(['requesterUid', 'targetUid', 'requesterName', 'targetName', 'participantUids', 'status', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['requesterUid', 'targetUid', 'requesterName', 'targetName', 'participantUids', 'status', 'createdAt', 'updatedAt']) &&
+                       isValidFriendship(incoming());
+      allow update: if isSignedIn() &&
+                       isValidId(friendshipId) &&
+                       isValidFriendship(incoming()) &&
+                       request.auth.uid in existing().participantUids &&
+                       existing().status == 'pending' &&
+                       incoming().requesterUid == existing().requesterUid &&
+                       incoming().targetUid == existing().targetUid &&
+                       incoming().participantUids == existing().participantUids &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if isSignedIn() && isValidId(friendshipId) && request.auth.uid in existing().participantUids;
+    }
+
+    // --- 7. PvP Bounty Missions ("Eliminate My Friend") ---
+    function isValidBounty(data) {
+      return isBoundedString(data.hunterUid, 1, 128) &&
+             isBoundedString(data.hunterName, 1, 30) &&
+             isBoundedString(data.targetUid, 1, 128) &&
+             isBoundedString(data.targetName, 1, 30) &&
+             data.hunterUid != data.targetUid &&
+             data.participantUids is list &&
+             data.participantUids.size() == 2 &&
+             data.hunterUid in data.participantUids &&
+             data.targetUid in data.participantUids &&
+             data.rewardHunter == 50 &&
+             data.rewardCounter == 25 &&
+             data.status in ['active', 'hunter_won', 'target_won', 'expired'] &&
+             (!('winnerUid' in data) || data.winnerUid == null || isBoundedString(data.winnerUid, 1, 128)) &&
+             data.cooldownUntilEpochMs is int && data.cooldownUntilEpochMs >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /bounties/{bountyId} {
+      allow get, list: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow create: if isSignedIn() &&
+                       isValidId(bountyId) &&
+                       incoming().hunterUid == request.auth.uid &&
+                       incoming().status == 'active' &&
+                       incoming().keys().hasAll(['hunterUid', 'hunterName', 'targetUid', 'targetName', 'participantUids', 'rewardHunter', 'rewardCounter', 'status', 'cooldownUntilEpochMs', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['hunterUid', 'hunterName', 'targetUid', 'targetName', 'participantUids', 'rewardHunter', 'rewardCounter', 'status', 'winnerUid', 'cooldownUntilEpochMs', 'createdAt', 'updatedAt']) &&
+                       isValidBounty(incoming());
+      allow update: if isSignedIn() &&
+                       isValidId(bountyId) &&
+                       isValidBounty(incoming()) &&
+                       request.auth.uid in existing().participantUids &&
+                       existing().status == 'active' &&
+                       incoming().hunterUid == existing().hunterUid &&
+                       incoming().targetUid == existing().targetUid &&
+                       incoming().participantUids == existing().participantUids &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'winnerUid', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // --- 8. Multiplayer World & Room Chat ---
+    function isValidChatMessage(data) {
+      return isBoundedString(data.roomId, 1, 64) &&
+             isBoundedString(data.senderUid, 1, 128) &&
+             isBoundedString(data.senderName, 1, 30) &&
+             isBoundedString(data.text, 1, 240) &&
+             data.messageType in ['text', 'emote', 'alert'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /chat_messages/{messageId} {
+      allow get: if isSignedIn() && isValidId(messageId);
+      allow list: if isSignedIn() && (
+        resource.data.roomId == 'global_world' ||
+        resource.data.senderUid == request.auth.uid
+      );
+      allow create: if isSignedIn() &&
+                       isValidId(messageId) &&
+                       incoming().senderUid == request.auth.uid &&
+                       incoming().keys().hasAll(['roomId', 'senderUid', 'senderName', 'text', 'messageType', 'createdAt']) &&
+                       incoming().keys().hasOnly(['roomId', 'senderUid', 'senderName', 'text', 'messageType', 'createdAt']) &&
+                       isValidChatMessage(incoming());
+      allow update: if false;
+      allow delete: if isSignedIn() && isValidId(messageId) && existing().senderUid == request.auth.uid;
+    }
+
+    // --- 9. P2P Pet Trades with Explicit Confirmation ---
+    function isValidPetTrade(data) {
+      return isBoundedString(data.senderUid, 1, 128) &&
+             isBoundedString(data.senderName, 1, 30) &&
+             isBoundedString(data.receiverUid, 1, 128) &&
+             isBoundedString(data.receiverName, 1, 30) &&
+             data.senderUid != data.receiverUid &&
+             data.participantUids is list &&
+             data.participantUids.size() == 2 &&
+             data.senderUid in data.participantUids &&
+             data.receiverUid in data.participantUids &&
+             isBoundedString(data.offeredPetId, 1, 64) &&
+             isBoundedString(data.offeredPetType, 1, 40) &&
+             data.offeredEvolutionLevel is int && data.offeredEvolutionLevel >= 1 && data.offeredEvolutionLevel <= 3 &&
+             isBoundedString(data.requestedPetType, 1, 40) &&
+             data.status in ['pending', 'accepted', 'declined', 'cancelled'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /pet_trades/{tradeId} {
+      allow get, list: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow create: if isSignedIn() &&
+                       isValidId(tradeId) &&
+                       incoming().senderUid == request.auth.uid &&
+                       incoming().status == 'pending' &&
+                       incoming().keys().hasAll([
+                         'senderUid', 'senderName', 'receiverUid', 'receiverName', 'participantUids',
+                         'offeredPetId', 'offeredPetType', 'offeredEvolutionLevel', 'requestedPetType',
+                         'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'senderUid', 'senderName', 'receiverUid', 'receiverName', 'participantUids',
+                         'offeredPetId', 'offeredPetType', 'offeredEvolutionLevel', 'requestedPetType',
+                         'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPetTrade(incoming());
+      allow update: if isSignedIn() &&
+                       isValidId(tradeId) &&
+                       isValidPetTrade(incoming()) &&
+                       request.auth.uid in existing().participantUids &&
+                       existing().status == 'pending' &&
+                       incoming().senderUid == existing().senderUid &&
+                       incoming().receiverUid == existing().receiverUid &&
+                       incoming().participantUids == existing().participantUids &&
+                       incoming().offeredPetId == existing().offeredPetId &&
+                       incoming().offeredPetType == existing().offeredPetType &&
+                       incoming().offeredEvolutionLevel == existing().offeredEvolutionLevel &&
+                       incoming().requestedPetType == existing().requestedPetType &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if false;
+    }
+  }
+}

@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Indra: Anime Life RP</string>
+    <string name="location_channel_name">Live Location Sync</string>
+    <string name="location_notification_title">Live Coordinate Sync Active</string>
+    <string name="location_notification_text">Updating your GPS coordinates in your player profile.</string>
+</resources>

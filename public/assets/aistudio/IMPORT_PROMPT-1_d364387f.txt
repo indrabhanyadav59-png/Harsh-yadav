@@ -1,0 +1,99 @@
+# INDRA: ANIME LIFE RP — CHARACTER ASSET IMPORT & INTEGRATION BRIEF
+
+You are modifying my EXISTING Google AI Studio game project. This task is ONLY the player character and AI character appearance system. Do not work on cars or map in this task.
+
+I am supplying:
+1. `public/models/indra-hero-starter.glb` — starter modular 3D character asset.
+2. `src/components/IndraCharacterCustomizer.jsx` — React Three Fiber character preview/customizer.
+3. This integration brief.
+
+FIRST inspect the existing project, package.json, rendering engine, player entity, character controller, animation system, inventory, and save system. Do not assume the app is a blank project.
+
+IMPORTANT ASSET TRUTH:
+The supplied GLB is a STATIC, modular, stylized starter mesh prototype. It is not a production-quality rigged character and contains no skeletal animation. Do not pretend it has a skeleton or animations. Use it for visual integration/testing. If the game needs walking/running/attack animations, create or import a properly rigged humanoid GLB with a compatible skeleton, then retarget animations. Keep the same visual design direction.
+
+TECHNOLOGY:
+- If the project is React + Three.js, use the existing Three.js setup and React Three Fiber if already installed.
+- Do not migrate engines.
+- Install only missing compatible dependencies.
+- Keep existing app entry points and routes.
+
+IMPORT:
+- Copy `indra-hero-starter.glb` to `public/models/indra-hero-starter.glb`.
+- Copy `IndraCharacterCustomizer.jsx` into the project's source components.
+- Verify the model loads at `/models/indra-hero-starter.glb`.
+- Fix import paths and package versions according to the actual project.
+- If the project uses a different model loader, adapt the implementation without breaking the app.
+
+MAIN HERO DESIGN:
+Create the main hero identity “INDRA — SHADOW BLAZE”:
+- Anime-inspired youthful adult male hero.
+- Stylized human proportions, spiky hair, expressive eyes.
+- Black/red long tactical coat, fitted pants and boots.
+- Katana carried on the back.
+- Clean, non-graphic fantasy game aesthetic.
+- Character must remain the player's persistent identity while outfits and accessories can change.
+
+CUSTOMIZATION:
+Implement working tabs for:
+- Outfits: Shadow Blaze, White Storm, Cyber Hunter, Golden King, Dark Phantom, Red Ninja.
+- Hair: Black, White, Crimson, Azure.
+- Accessories: Katana, Ninja Mask, Energy Wings, None.
+
+The supplied starter model uses named mesh groups:
+- `OUTFIT_<variant>_...`
+- `HAIR_<variant>_...`
+- `ACCESSORY_<variant>...`
+- `BASE_...` and `FACE_...`
+
+Use those names to switch visibility. Do not expect GLB `userData` metadata to exist.
+
+GAME INTEGRATION:
+- Replace the existing placeholder player appearance with the hero asset, but preserve the existing player ID, account, stats, inventory, controls, camera, multiplayer identity and spawn logic.
+- Do not create a second player entity.
+- Keep the player controller separate from the visual model.
+- Align the model's feet to the ground and its forward direction to the game's forward axis.
+- Match model scale to the existing world units.
+- Ensure the camera frames the complete character.
+- Avoid duplicate meshes when switching outfits.
+- Ensure all variants except the selected variant are hidden.
+- Keep the base body and face visible.
+- Save customization per player account using the existing backend if available. Local storage is only a fallback for local testing.
+- Restore the selected appearance after login and on respawn.
+
+AI NPC CHARACTERS:
+Create a reusable NPC appearance system based on the same anime art direction, but do NOT make every NPC an identical clone.
+Generate varied NPC configurations with:
+- Different hairstyles and hair colors.
+- Different face/eye colors.
+- Different outfit palettes and silhouettes.
+- Different accessories and back weapons (katana, sheathed sword, staff, backpack, none).
+- Different heights/build presets within reasonable stylized human proportions.
+- Unique NPC IDs and saved appearance seeds.
+- Randomized combinations selected once at spawn and kept stable during that NPC's lifetime.
+- Faction/job outfit presets for civilian, shopkeeper, police, academy student, mission NPC and rival.
+- Performance-friendly reuse of shared geometry/materials.
+
+Do not give every NPC all player-exclusive rare skins. Respect rarity and ownership rules.
+
+ANIMATION REQUIREMENT:
+The starter GLB is not rigged. Do not fake skeletal animation.
+If the existing game has a rigged player model, preserve its skeleton/animation pipeline and replace only the appearance using compatible assets.
+Otherwise, report that a rigged humanoid model and animation clips are still required. Required clips: idle, walk, run, sprint, jump, land, melee, aim, hit reaction, vehicle enter/exit.
+Do not claim these clips exist in the supplied GLB.
+
+QUALITY AND TESTING:
+- Verify the GLB loads without console errors.
+- Verify all outfit, hair and accessory choices visibly change.
+- Verify character scale and ground alignment.
+- Verify no outfit meshes overlap incorrectly.
+- Verify mobile preview works.
+- Verify save/restore.
+- Verify NPCs have visibly varied appearances.
+- Preserve all unrelated game systems.
+- Do not modify vehicles or map in this task.
+- Do not leave fake controls or unimplemented buttons.
+
+If a step cannot be completed because a rigged asset, backend, or animation file is missing, state exactly what is missing and keep the working parts intact.
+
+Deliver the actual integrated code, not just an explanation or screenshot.

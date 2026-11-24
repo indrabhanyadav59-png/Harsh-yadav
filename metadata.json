@@ -1,0 +1,6 @@
+{
+  "name": "Indra: Anime Life RP",
+  "description": "An anime 3D open-world multiplayer action, vehicle, property, pet, and life simulation RPG powered by Firebase and Gemini AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
